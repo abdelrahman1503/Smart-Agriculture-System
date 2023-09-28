@@ -97,6 +97,7 @@ void connectToMQTT()
     if (mqttClient.connect("ESP32Client")) 
     {
       Serial.println("Connected to MQTT");
+      mqttClient.subscribe(pumpTopic);
     } 
     else 
     {
@@ -141,4 +142,24 @@ void checkConnection()
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
   }  
+}
+
+void reconnect() 
+{
+  while (!mqttClient.connected()) 
+  {
+    Serial.print("Attempting MQTT connection...");
+    if (mqttClient.connect("ESPClient")) 
+    {
+      Serial.println("connected");
+      
+    } 
+    else
+    {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" try again in 5 seconds"); 
+      delay(5000);
+    }
+   }
 }

@@ -41,10 +41,26 @@ void setup()
 void loop() 
 {
   checkConnection();
+  if (!mqttClient.connected()) {
+    reconnect();
+  }
   OTALoop();
+    int waterLevel = analogRead(WATERLEVELSENSORPIN);
+  Serial.print("Water:");
+  Serial.println(waterLevel);
+  char waterOut[20];
+  sprintf(waterOut, "%d", waterLevel);
+  mqttClient.publish(waterLevelTopic, waterOut);
+  if(waterLevel < waterLevelThreshold)
+  {
+    sendWaterLevelAlert();
+  }
   int moistureLevel = analogRead(MOISTURESENSORPIN);
-  String moisture = String(moistureLevel, 1);
-  mqttClient.publish(moistureTopic, moisture.c_str());
+  Serial.print("Moisture:");
+  Serial.println(moistureLevel);
+  char moistureOut[20];
+  sprintf(moistureOut, "%d", moistureLevel);
+  mqttClient.publish(moistureTopic, moistureOut);
   if (moistureLevel > moistureAlertThreshold)
   {
     sendMoistureAlert(moistureLevel);
@@ -71,15 +87,8 @@ void loop()
       }
     }
   }
-  int waterLevel = analogRead(WATERLEVELSENSORPIN);
-  String water = String(waterLevel, 1);
-  mqttClient.publish(waterLevelTopic, water.c_str());
-  if(waterLevel < waterLevelThreshold)
-  {
-    sendWaterLevelAlert();
-  }
   mqttClient.loop();
-  delay(1000);
+  delay(2000);
 }
 
 void playSound()

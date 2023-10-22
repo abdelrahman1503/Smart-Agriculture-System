@@ -1,40 +1,13 @@
-#include <SD.h>
 #include "OTA.h"
 #include "water_Control.h"
 
-#define SD_CS_PIN             5
-#define SPEAKER_PIN           14
-
-void playSound();
-
-
-// Array to store the sound file names
-
-char* soundFiles[] = {
-  "sound1.wav",
-  "sound2.wav",
-  "sound3.wav"
-};
-
-const int numSoundFiles = sizeof(soundFiles) / sizeof(soundFiles[0]);
-
-/*
-TMRpcm tmrpcm;
-*/
 void setup() 
 {
   Serial.begin(115200);
-   if (!SD.begin(SD_CS_PIN)) {
-    Serial.println("SD card initialization failed!");
-  }
   connectToWiFi();
   OTASetup();
   mqttClient.setCallback(callback);
   connectToMQTT();
-  /*
-  tmrpcm.speakerPin = SPEAKER_PIN;
-  tmrpcm.setVolume(5);
-  */
   pinMode(WATERPUMPPIN, OUTPUT);
 }
 
@@ -45,11 +18,12 @@ void loop()
     reconnect();
   }
   OTALoop();
-    int waterLevel = analogRead(WATERLEVELSENSORPIN);
+  int waterLevel = analogRead(WATERLEVELSENSORPIN);
   Serial.print("Water:");
   Serial.println(waterLevel);
+  int waterPercent = map(waterLevel, 0, 4500, 0, 100);
   char waterOut[20];
-  sprintf(waterOut, "%d", waterLevel);
+  sprintf(waterOut, "%d", waterPercent);
   mqttClient.publish(waterLevelTopic, waterOut);
   if(waterLevel < waterLevelThreshold)
   {
@@ -58,13 +32,13 @@ void loop()
   int moistureLevel = analogRead(MOISTURESENSORPIN);
   Serial.print("Moisture:");
   Serial.println(moistureLevel);
+  int moisturePercent = map(moistureLevel, 4500, 0, 0, 100);
   char moistureOut[20];
-  sprintf(moistureOut, "%d", moistureLevel);
+  sprintf(moistureOut, "%d", moisturePercent);
   mqttClient.publish(moistureTopic, moistureOut);
   if (moistureLevel > moistureAlertThreshold)
   {
     sendMoistureAlert(moistureLevel);
-    /*playSound();*/
   }
   if (moistureLevel > moisturePumpThreshold)
   {
@@ -72,7 +46,6 @@ void loop()
     isPumpOn = true;
     pumpOnTime = millis();
     sendPumpStatus(true);
-    /*playSound();*/
   }
   else 
   {
@@ -89,17 +62,4 @@ void loop()
   }
   mqttClient.loop();
   delay(2000);
-}
-
-void playSound()
-{
-      // Generate a random index for selecting a sound file
-    int randomIndex = random(0, numSoundFiles);
-
-    // Get the selected sound file name
-    char* soundFile = soundFiles[randomIndex];
-
-    // Play the sound file
-    //tmrpcm.play(soundFile);
-    delay(100); // Delay to allow audio playback
 }
